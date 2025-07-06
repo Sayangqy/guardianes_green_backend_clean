@@ -40,7 +40,6 @@ app.post('/register', async (req, res) => {
     const nuevo = new Usuario({ nombre, email: email.toLowerCase(), password: hashedPassword });
     await nuevo.save();
 
-    // 🔐 Generar token
     const token = jwt.sign(
       { id: nuevo._id, nombre: nuevo.nombre },
       process.env.JWT_SECRET,
@@ -72,7 +71,6 @@ app.post('/login', async (req, res) => {
       return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
     }
 
-    // 🔐 Generar token
     const token = jwt.sign(
       { id: usuario._id, nombre: usuario.nombre },
       process.env.JWT_SECRET,

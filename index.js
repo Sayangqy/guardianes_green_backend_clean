@@ -30,13 +30,13 @@ app.post('/register', async (req, res) => {
   }
 
   try {
-    const existente = await Usuario.findOne({ email });
+    const existente = await Usuario.findOne({ email: email.toLowerCase() });
     if (existente) {
       return res.status(400).json({ success: false, message: 'Usuario ya existe' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const nuevo = new Usuario({ nombre, email, password: hashedPassword });
+    const nuevo = new Usuario({ nombre, email: email.toLowerCase(), password: hashedPassword });
     await nuevo.save();
 
     res.json({ success: true, message: 'Registrado exitosamente', token: 'fake-register-token' });
@@ -52,7 +52,7 @@ app.post('/login', async (req, res) => {
   console.log('📥 Intento de login con:', email, password);
 
   try {
-    const usuario = await Usuario.findOne({ email });
+    const usuario = await Usuario.findOne({ email: email.toLowerCase() });
 
     if (!usuario) {
       return res.status(401).json({ success: false, message: 'Credenciales inválidas' });

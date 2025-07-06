@@ -23,18 +23,24 @@ mongoose.connect(process.env.MONGO_URI, {
 // Rutas
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
-    console.log('📥 Intento de login con:', email, password);
+  console.log('📥 Intento de login con:', email, password);
 
   const usuario = await Usuario.findOne({ email });
-    console.log('🧍 Usuario encontrado en DB:', usuario);
- 
+  if (!usuario) {
+    return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
+  }
 
-  if (!usuario || usuario.password !== password) {
+  const validPassword = await bcrypt.compare(password, usuario.password); // 👈 Compara encriptada
+
+  if (!validPassword) {
     return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
   }
 
   res.json({ success: true, token: 'fake-token', nombre: usuario.nombre });
 });
+
+
+const bcrypt = require('bcryptjs');
 
 app.post('/register', async (req, res) => {
   const { nombre, email, password } = req.body;
@@ -48,7 +54,9 @@ app.post('/register', async (req, res) => {
     return res.status(400).json({ success: false, message: 'Usuario ya existe' });
   }
 
-  const nuevo = new Usuario({ nombre, email, password });
+  const hashedPassword = await bcrypt.hash(password, 10); // 👈 Encriptar
+
+  const nuevo = new Usuario({ nombre, email, password: hashedPassword });
   await nuevo.save();
 
   res.json({ success: true, message: 'Registrado exitosamente', token: 'fake-register-token' });

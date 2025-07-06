@@ -3,6 +3,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const bcrypt = require('bcryptjs'); // 👈 Mueve esto arriba
 
 const Usuario = require('./models/usuario');
 
@@ -12,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 
-// Conexión MongoDB
+// 🔗 Conexión MongoDB
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -20,7 +21,7 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('✅ Conectado a MongoDB'))
 .catch((err) => console.error('❌ Error conectando a MongoDB:', err));
 
-// Rutas
+// 🔐 Login
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   console.log('📥 Intento de login con:', email, password);
@@ -30,8 +31,7 @@ app.post('/login', async (req, res) => {
     return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
   }
 
-  const validPassword = await bcrypt.compare(password, usuario.password); // 👈 Compara encriptada
-
+  const validPassword = await bcrypt.compare(password, usuario.password);
   if (!validPassword) {
     return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
   }
@@ -39,9 +39,7 @@ app.post('/login', async (req, res) => {
   res.json({ success: true, token: 'fake-token', nombre: usuario.nombre });
 });
 
-
-const bcrypt = require('bcryptjs');
-
+// 🧾 Registro
 app.post('/register', async (req, res) => {
   const { nombre, email, password } = req.body;
 
@@ -54,7 +52,7 @@ app.post('/register', async (req, res) => {
     return res.status(400).json({ success: false, message: 'Usuario ya existe' });
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10); // 👈 Encriptar
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   const nuevo = new Usuario({ nombre, email, password: hashedPassword });
   await nuevo.save();
@@ -62,7 +60,7 @@ app.post('/register', async (req, res) => {
   res.json({ success: true, message: 'Registrado exitosamente', token: 'fake-register-token' });
 });
 
-// Arranca server
+// 🚀 Servidor listo
 app.listen(PORT, () => {
   console.log(`🌿 Servidor escuchando en puerto ${PORT}`);
 });

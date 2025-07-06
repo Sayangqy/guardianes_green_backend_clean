@@ -52,5 +52,5 @@ app.post('/register', async (req, res) => {
 
 // Arranca server
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor escuchando en puerto ${PORT}`);
+  console.log(`🌿 Servidor escuchando en puerto ${PORT}`);
 });

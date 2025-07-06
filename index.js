@@ -23,7 +23,11 @@ mongoose.connect(process.env.MONGO_URI, {
 // Rutas
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
+    console.log('📥 Intento de login con:', email, password);
+
   const usuario = await Usuario.findOne({ email });
+    console.log('🧍 Usuario encontrado en DB:', usuario);
+ 
 
   if (!usuario || usuario.password !== password) {
     return res.status(401).json({ success: false, message: 'Credenciales inválidas' });

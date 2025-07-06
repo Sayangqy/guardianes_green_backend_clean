@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const Usuario = require('./models/usuario');
 
@@ -39,7 +40,14 @@ app.post('/register', async (req, res) => {
     const nuevo = new Usuario({ nombre, email: email.toLowerCase(), password: hashedPassword });
     await nuevo.save();
 
-    res.json({ success: true, message: 'Registrado exitosamente', token: 'fake-register-token' });
+    // 🔐 Generar token
+    const token = jwt.sign(
+      { id: nuevo._id, nombre: nuevo.nombre },
+      process.env.JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    res.json({ success: true, message: 'Registrado exitosamente', token });
   } catch (err) {
     console.error('❌ Error al registrar:', err);
     res.status(500).json({ success: false, message: 'Error en el servidor' });
@@ -64,7 +72,14 @@ app.post('/login', async (req, res) => {
       return res.status(401).json({ success: false, message: 'Credenciales inválidas' });
     }
 
-    res.json({ success: true, token: 'fake-token', nombre: usuario.nombre });
+    // 🔐 Generar token
+    const token = jwt.sign(
+      { id: usuario._id, nombre: usuario.nombre },
+      process.env.JWT_SECRET,
+      { expiresIn: '2h' }
+    );
+
+    res.json({ success: true, token, nombre: usuario.nombre });
   } catch (err) {
     console.error('❌ Error al hacer login:', err);
     res.status(500).json({ success: false, message: 'Error en el servidor' });

@@ -81,7 +81,7 @@ app.post('/login', async (req, res) => {
       { expiresIn: '2h' }
     );
 
-    res.json({ success: true, token, nombre: usuario.nombre });
+    res.json({ success: true, token, nombre: usuario.nombre, usuarioId: usuario._id });
   } catch (err) {
     console.error('❌ Error al hacer login:', err);
     res.status(500).json({ success: false, message: 'Error en el servidor' });

@@ -147,6 +147,27 @@ app.post('/api/reportes', upload.single('imagen'), async (req, res) => {
   }
 });
 
+// 📥 Ruta: Obtener reportes por usuario
+app.get('/api/reportes', async (req, res) => {
+  try {
+    const { usuarioId } = req.query;
+
+    if (!usuarioId) {
+      return res.status(400).json({ ok: false, mensaje: 'usuarioId es requerido' });
+    }
+
+    const reportes = await Reporte.find({ usuarioId }).sort({ fecha: -1 });
+
+    res.json({
+      ok: true,
+      data: reportes,
+    });
+  } catch (error) {
+    console.error('❌ Error en GET /api/reportes:', error);
+    res.status(500).json({ ok: false, mensaje: 'Error al obtener los reportes' });
+  }
+});
+
 // ▶️ Arranque del servidor
 app.listen(PORT, () => {
   console.log(`🌿 Servidor escuchando en puerto ${PORT}`);

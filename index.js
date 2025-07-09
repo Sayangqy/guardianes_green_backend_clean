@@ -5,6 +5,9 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const Usuario = require('./models/usuario');
 
@@ -13,6 +16,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Servir imágenes
 
 // 🔌 Conexión a MongoDB Atlas
 mongoose.connect(process.env.MONGO_URI, {
@@ -81,6 +85,65 @@ app.post('/login', async (req, res) => {
   } catch (err) {
     console.error('❌ Error al hacer login:', err);
     res.status(500).json({ success: false, message: 'Error en el servidor' });
+  }
+});
+
+
+// 🌍 MODELO: Reporte (interno)
+const mongooseReporteSchema = new mongoose.Schema({
+  usuarioId: { type: String, required: true },
+  fecha: { type: Date, default: Date.now },
+  ubicacion: {
+    lat: Number,
+    lng: Number,
+  },
+  imagen: { type: String }, // Ruta del archivo
+});
+
+const Reporte = mongoose.model('Reporte', mongooseReporteSchema);
+
+// 📂 Configuración de almacenamiento
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const dir = './uploads';
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
+    cb(null, dir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname);
+    const filename = `reporte_${Date.now()}${ext}`;
+    cb(null, filename);
+  },
+});
+
+const upload = multer({ storage });
+
+// 📩 Ruta: Subida de reportes
+app.post('/api/reportes', upload.single('imagen'), async (req, res) => {
+  try {
+    const { lat, lng, usuarioId } = req.body;
+    const imagenPath = req.file ? req.file.path : null;
+
+    const nuevoReporte = new Reporte({
+      usuarioId,
+      fecha: new Date(),
+      ubicacion: {
+        lat: parseFloat(lat),
+        lng: parseFloat(lng),
+      },
+      imagen: imagenPath,
+    });
+
+    await nuevoReporte.save();
+
+    res.status(201).json({
+      ok: true,
+      mensaje: 'Reporte guardado exitosamente',
+      data: nuevoReporte,
+    });
+  } catch (error) {
+    console.error('❌ Error en /api/reportes:', error);
+    res.status(500).json({ ok: false, mensaje: 'Error al guardar el reporte' });
   }
 });
 

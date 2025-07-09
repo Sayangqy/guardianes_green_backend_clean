@@ -148,6 +148,49 @@ app.post('/api/reportes', upload.single('imagen'), async (req, res) => {
 });
 
 // 📥 Ruta: Obtener reportes por usuario
+// 📥 Ruta: Subida de reportes
+app.post('/api/reportes', upload.single('imagen'), async (req, res) => {
+  try {
+    const { lat, lng, usuarioId } = req.body;
+
+    console.log('📦 Body:', req.body);
+    console.log('📷 req.file:', req.file);
+
+    const imagenPath = req.file ? req.file.path : null;
+
+    if (!usuarioId || !lat || !lng) {
+      return res.status(400).json({ ok: false, mensaje: 'Faltan datos obligatorios' });
+    }
+
+    if (!imagenPath) {
+      console.warn('⚠️ No se recibió una imagen');
+    }
+
+    const nuevoReporte = new Reporte({
+      usuarioId,
+      fecha: new Date(),
+      ubicacion: {
+        lat: parseFloat(lat),
+        lng: parseFloat(lng),
+      },
+      imagen: imagenPath,
+    });
+
+    await nuevoReporte.save();
+
+    res.status(201).json({
+      ok: true,
+      mensaje: 'Reporte guardado exitosamente',
+      data: nuevoReporte,
+    });
+  } catch (error) {
+    console.error('❌ Error en /api/reportes:', error);
+    res.status(500).json({ ok: false, mensaje: 'Error al guardar el reporte' });
+  }
+});
+
+
+// 📄 Ruta: Obtener reportes por usuario
 app.get('/api/reportes', async (req, res) => {
   try {
     const { usuarioId } = req.query;
@@ -167,6 +210,7 @@ app.get('/api/reportes', async (req, res) => {
     res.status(500).json({ ok: false, mensaje: 'Error al obtener los reportes' });
   }
 });
+
 
 // ▶️ Arranque del servidor
 app.listen(PORT, () => {

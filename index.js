@@ -10,6 +10,7 @@ const path = require('path');
 const fs = require('fs');
 
 const Usuario = require('./models/usuario');
+const Noticia = require('./models/noticia'); // 👈 NUEVO modelo de noticia
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -26,7 +27,7 @@ mongoose.connect(process.env.MONGO_URI, {
 .then(() => console.log('✅ Conectado a MongoDB'))
 .catch((err) => console.error('❌ Error conectando a MongoDB:', err));
 
-// 🧾 Ruta: Registro
+// 🧾 Registro
 app.post('/register', async (req, res) => {
   const { nombre, email, password } = req.body;
 
@@ -57,7 +58,7 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// 🔐 Ruta: Login
+// 🔐 Login
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   console.log('📥 Intento de login con:', email, password);
@@ -88,8 +89,7 @@ app.post('/login', async (req, res) => {
   }
 });
 
-
-// 🌍 MODELO: Reporte (interno)
+// 🌍 MODELO: Reporte
 const mongooseReporteSchema = new mongoose.Schema({
   usuarioId: { type: String, required: true },
   fecha: { type: Date, default: Date.now },
@@ -97,12 +97,11 @@ const mongooseReporteSchema = new mongoose.Schema({
     lat: Number,
     lng: Number,
   },
-  imagen: { type: String }, // Ruta del archivo
+  imagen: { type: String },
 });
-
 const Reporte = mongoose.model('Reporte', mongooseReporteSchema);
 
-// 📂 Configuración de almacenamiento
+// 📂 Configuración de Multer para imágenes
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const dir = './uploads';
@@ -115,57 +114,18 @@ const storage = multer.diskStorage({
     cb(null, filename);
   },
 });
-
 const upload = multer({ storage });
 
-// 📩 Ruta: Subida de reportes
+// 📩 Subida de reportes
 app.post('/api/reportes', upload.single('imagen'), async (req, res) => {
   try {
     const { lat, lng, usuarioId } = req.body;
-    const imagenPath = req.file ? req.file.path : null;
-
-    const nuevoReporte = new Reporte({
-      usuarioId,
-      fecha: new Date(),
-      ubicacion: {
-        lat: parseFloat(lat),
-        lng: parseFloat(lng),
-      },
-      imagen: imagenPath,
-    });
-
-    await nuevoReporte.save();
-
-    res.status(201).json({
-      ok: true,
-      mensaje: 'Reporte guardado exitosamente',
-      data: nuevoReporte,
-    });
-  } catch (error) {
-    console.error('❌ Error en /api/reportes:', error);
-    res.status(500).json({ ok: false, mensaje: 'Error al guardar el reporte' });
-  }
-});
-
-// 📥 Ruta: Obtener reportes por usuario
-// 📥 Ruta: Subida de reportes
-app.post('/api/reportes', upload.single('imagen'), async (req, res) => {
-  try {
-    const { lat, lng, usuarioId } = req.body;
-
-    console.log('📦 Body:', req.body);
-    console.log('📷 req.file:', req.file);
-
     const imagenPath = req.file ? req.file.path : null;
 
     if (!usuarioId || !lat || !lng) {
       return res.status(400).json({ ok: false, mensaje: 'Faltan datos obligatorios' });
     }
 
-    if (!imagenPath) {
-      console.warn('⚠️ No se recibió una imagen');
-    }
-
     const nuevoReporte = new Reporte({
       usuarioId,
       fecha: new Date(),
@@ -189,8 +149,7 @@ app.post('/api/reportes', upload.single('imagen'), async (req, res) => {
   }
 });
 
-
-// 📄 Ruta: Obtener reportes por usuario
+// 📄 Obtener reportes por usuario
 app.get('/api/reportes', async (req, res) => {
   try {
     const { usuarioId } = req.query;
@@ -211,6 +170,42 @@ app.get('/api/reportes', async (req, res) => {
   }
 });
 
+
+// 📘 NUEVO: MODELO de Noticia (si no lo tenés en archivo aparte)
+const mongooseNoticiaSchema = new mongoose.Schema({
+  titulo: { type: String, required: true },
+  resumen: { type: String },
+  contenido: { type: String, required: true },
+  imagen: { type: String },
+  fecha: { type: Date, default: Date.now },
+});
+mongoose.model('Noticia', mongooseNoticiaSchema);
+
+// 📘 Crear noticia
+app.post('/api/noticias', async (req, res) => {
+  try {
+    const { titulo, resumen, contenido, imagen } = req.body;
+
+    const noticia = new Noticia({ titulo, resumen, contenido, imagen });
+    await noticia.save();
+
+    res.json({ ok: true, data: noticia });
+  } catch (err) {
+    console.error('❌ Error al crear noticia:', err);
+    res.status(500).json({ ok: false, mensaje: 'Error al crear noticia' });
+  }
+});
+
+// 📘 Obtener noticias
+app.get('/api/noticias', async (req, res) => {
+  try {
+    const noticias = await Noticia.find().sort({ fecha: -1 });
+    res.json({ ok: true, data: noticias });
+  } catch (err) {
+    console.error('❌ Error al obtener noticias:', err);
+    res.status(500).json({ ok: false, mensaje: 'Error al obtener noticias' });
+  }
+});
 
 // ▶️ Arranque del servidor
 app.listen(PORT, () => {

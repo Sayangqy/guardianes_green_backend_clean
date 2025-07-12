@@ -53,7 +53,13 @@ app.post('/register', async (req, res) => {
       { expiresIn: '2h' }
     );
 
-    res.json({ success: true, message: 'Registrado exitosamente', token });
+    res.json({
+      success: true,
+      message: 'Registrado exitosamente',
+      token,
+      usuarioId: nuevo._id,
+      nombre: nuevo.nombre
+    });
   } catch (err) {
     console.error('❌ Error al registrar:', err);
     res.status(500).json({ success: false, message: 'Error en el servidor' });

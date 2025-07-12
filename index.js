@@ -9,15 +9,17 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
+// Modelos
 const Usuario = require('./models/usuario');
-const Noticia = require('./models/noticia'); // 👈 NUEVO modelo de noticia
+const Noticia = require('./models/noticia'); // ✅ Correcto uso
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Middleware
 app.use(cors());
 app.use(bodyParser.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Servir imágenes
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Imágenes estáticas
 
 // 🔌 Conexión a MongoDB Atlas
 mongoose.connect(process.env.MONGO_URI, {
@@ -61,7 +63,6 @@ app.post('/register', async (req, res) => {
 // 🔐 Login
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  console.log('📥 Intento de login con:', email, password);
 
   try {
     const usuario = await Usuario.findOne({ email: email.toLowerCase() });
@@ -101,7 +102,7 @@ const mongooseReporteSchema = new mongoose.Schema({
 });
 const Reporte = mongoose.model('Reporte', mongooseReporteSchema);
 
-// 📂 Configuración de Multer para imágenes
+// 📂 Multer: Configuración de almacenamiento
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     const dir = './uploads';
@@ -170,18 +171,7 @@ app.get('/api/reportes', async (req, res) => {
   }
 });
 
-
-// 📘 NUEVO: MODELO de Noticia (si no lo tenés en archivo aparte)
-const mongooseNoticiaSchema = new mongoose.Schema({
-  titulo: { type: String, required: true },
-  resumen: { type: String },
-  contenido: { type: String, required: true },
-  imagen: { type: String },
-  fecha: { type: Date, default: Date.now },
-});
-mongoose.model('Noticia', mongooseNoticiaSchema);
-
-// 📘 Crear noticia
+// 📰 Crear noticia
 app.post('/api/noticias', async (req, res) => {
   try {
     const { titulo, resumen, contenido, imagen } = req.body;
@@ -196,7 +186,7 @@ app.post('/api/noticias', async (req, res) => {
   }
 });
 
-// 📘 Obtener noticias
+// 📰 Obtener noticias
 app.get('/api/noticias', async (req, res) => {
   try {
     const noticias = await Noticia.find().sort({ fecha: -1 });
